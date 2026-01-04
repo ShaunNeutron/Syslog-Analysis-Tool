@@ -1,5 +1,5 @@
 /**
- * Example Node.js Syslog Server
+ * Node.js Syslog Server
  * 
  * This server listens for syslog messages on UDP port 514 and forwards them
  * to the web UI via WebSocket.
@@ -8,7 +8,7 @@
  *   npm install ws dgram
  * 
  * Usage:
- *   sudo node syslog-server-example.js
+ *   sudo node syslog-server.cjs
  * 
  * Note: Port 514 requires root/admin privileges on Linux/Mac.
  * You can use a higher port (e.g., 5140) without privileges.
@@ -25,7 +25,7 @@ const WEBSOCKET_PORT = 8080;
 const syslogServer = dgram.createSocket('udp4');
 
 // Create WebSocket server for forwarding to UI
-const wss = new WebSocket.Server({ port: WEBSOCKET_PORT });
+const wss = new WebSocket.Server({ port: WEBSOCKET_PORT, ip: '127.0.0.1' });
 
 let connectedClients = [];
 

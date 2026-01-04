@@ -1,4 +1,4 @@
-import { Activity, Pause, Play, Trash2 } from 'lucide-react';
+import { Activity, Pause, Play, Trash2, Loader2 } from 'lucide-react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
@@ -109,29 +109,36 @@ export function RealTimeLogViewer({
                   {logs.map((log, index) => (
                     <div
                       key={index}
-                      className={`p-2 rounded border ${getSeverityColor(log.severity)} flex items-start gap-2`}
+                      className={`p-2 rounded border ${getSeverityColor(log.severity)} flex flex-col gap-2`}
                     >
-                      <span className="text-gray-500 min-w-[140px]">
-                        {log.timestamp}
-                      </span>
-                      <Badge
-                        variant="outline"
-                        className="text-xs min-w-[60px] justify-center"
-                      >
-                        {log.source.toUpperCase()}
-                      </Badge>
-                      {log.category && (
+                      <div className="flex items-start gap-2">
+                        <span className="text-gray-500 min-w-[140px]">
+                          {log.timestamp}
+                        </span>
                         <Badge
-                          className={`text-xs min-w-[80px] justify-center ${
-                            log.category === 'security' ? 'bg-red-600' :
-                            log.category === 'system-failure' ? 'bg-orange-600' :
-                            'bg-blue-600'
-                          }`}
+                          variant="outline"
+                          className="text-xs min-w-[60px] justify-center"
                         >
-                          {log.category}
+                          {log.source.toUpperCase()}
                         </Badge>
+                        {log.category && (
+                          <Badge
+                            className={`text-xs min-w-[80px] justify-center ${
+                              log.category === 'security' ? 'bg-red-600' :
+                              log.category === 'system-failure' ? 'bg-orange-600' :
+                              'bg-blue-600'
+                            }`}
+                          >
+                            {log.category}
+                          </Badge>
+                        )}
+                        <span className="flex-1 break-all">{log.message}</span>
+                      </div>
+                      {log.aiAnalysis && (
+                        <div className="ml-[140px] pl-2 border-l-2 border-purple-400 text-purple-100 italic">
+                          🤖 AI: {log.aiAnalysis}
+                        </div>
                       )}
-                      <span className="flex-1 break-all">{log.message}</span>
                     </div>
                   ))}
                   <div ref={endOfLogsRef} />

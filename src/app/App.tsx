@@ -9,7 +9,7 @@ import { RealTimeLogViewer } from './components/RealTimeLogViewer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from './components/ui/alert';
 import { parseAndMatchLogs } from './utils/logParser';
-import { batchAnalyzeLogs } from './utils/ollamaService';
+import { batchAnalyzeLogs, analyzeLogWithOllama } from './utils/ollamaService';
 import { matchRules } from './utils/logParser';
 import { toast } from 'sonner';
 import { Toaster } from './components/ui/sonner';
@@ -81,7 +81,7 @@ export default function App() {
   const handleToggleListener = (port: number) => {
     setIsListening(!isListening);
     if (!isListening) {
-      toast.success(`Syslog listener started on UDP/${port} (Demo Mode)`);
+      toast.success(`Syslog listener started on UDP/${port}`);
     } else {
       toast.info('Syslog listener stopped');
       // Process any buffered logs
@@ -99,7 +99,32 @@ export default function App() {
 
     // Parse and match with rules
     const parsedLogs = parseAndMatchLogs(rawLog, rules);
+    
+    // Add logs to real-time view immediately
     setRealtimeLogs(prev => [...prev, ...parsedLogs]);
+
+    // Analyze critical/warning logs without AI analysis in background
+    parsedLogs.forEach(async (log, index) => {
+      const shouldAnalyze = 
+        (log.severity === 'critical' || log.severity === 'warning') && 
+        !log.aiAnalysis;
+
+      if (shouldAnalyze) {
+        try {
+          const analyzedLog = await analyzeLogWithOllama(log, ollamaConfig);
+          
+          // Update the specific log entry with AI analysis
+          setRealtimeLogs(prev => {
+            const logIndex = prev.length - parsedLogs.length + index;
+            const updated = [...prev];
+            updated[logIndex] = analyzedLog;
+            return updated;
+          });
+        } catch (error) {
+          console.error('Failed to analyze log with Ollama:', error);
+        }
+      }
+    });
 
     // Show toast for critical logs
     parsedLogs.forEach(log => {
@@ -113,7 +138,7 @@ export default function App() {
         });
       }
     });
-  }, [isPaused, rules]);
+  }, [isPaused, rules, ollamaConfig]);
 
   const processBufferedLogs = () => {
     if (bufferedLogs.length > 0) {

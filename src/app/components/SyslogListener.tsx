@@ -18,26 +18,20 @@ export function SyslogListener({ onLogReceived, isListening, onToggleListener }:
   const [messageCount, setMessageCount] = useState(0);
   const [lastMessage, setLastMessage] = useState<string>('');
 
-  // Simulate receiving logs in demo mode
-  useEffect(() => {
-    if (isListening) {
-      const interval = setInterval(() => {
-        const demoLogs = [
-          'Jan  3 10:23:45 firewall filterlog: ALLOW,in,4,0x0,0,5678,UDP,17,64,192.168.1.100,8.8.8.8,53',
-          'Jan  3 10:24:12 webserver sshd[12345]: Failed password for root from 203.0.113.45 port 52341 ssh2',
-          'Jan  3 10:24:30 firewall filterlog: BLOCK,in,4,wan,0,5678,TCP,6,64,198.51.100.23,192.168.1.5,22',
-          'Jan  3 10:25:01 unifi hostapd: U7PG2: STA 00:11:22:33:44:55 IEEE 802.11: authenticated',
-          'Jan  3 10:25:15 webserver sshd[12346]: Failed password for admin from 203.0.113.45 port 52342 ssh2',
-        ];
-        const randomLog = demoLogs[Math.floor(Math.random() * demoLogs.length)];
-        setLastMessage(randomLog);
-        setMessageCount(prev => prev + 1);
-        onLogReceived(randomLog);
-      }, 3000);
+// Receive syslog messages from local websocket:
+useEffect(() => {
+  if (isListening) {
+    const ws = new WebSocket('ws://127.0.0.1:8080');
+    
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      onLogReceived(data.message);
+    };
+    
+    return () => ws.close();
+  }
+}, [isListening, onLogReceived]);
 
-      return () => clearInterval(interval);
-    }
-  }, [isListening, onLogReceived]);
 
   const handleToggle = () => {
     if (!isListening) {
