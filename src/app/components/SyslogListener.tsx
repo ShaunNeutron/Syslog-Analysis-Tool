@@ -20,11 +20,29 @@ export function SyslogListener({ onLogReceived, isListening, onToggleListener }:
 
  useEffect(() => {
   if (isListening) {
-    const ws = new WebSocket('ws://localhost:8080');
+    // Use dynamic hostname to support remote access
+    // For development: ws://localhost:8080
+    // For production: wss://your-domain.com:8080
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsHost = window.location.hostname; // Uses current hostname
+    const wsPort = '8080';
+    const ws = new WebSocket(`${wsProtocol}//${wsHost}:${wsPort}`);
+    
+    ws.onopen = () => {
+      console.log('✅ Connected to syslog WebSocket server');
+    };
     
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       onLogReceived(data.message);
+    };
+    
+    ws.onerror = (error) => {
+      console.error('❌ WebSocket error:', error);
+    };
+    
+    ws.onclose = () => {
+      console.log('WebSocket connection closed');
     };
     
     return () => ws.close();
