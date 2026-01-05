@@ -18,10 +18,9 @@ export function SyslogListener({ onLogReceived, isListening, onToggleListener }:
   const [messageCount, setMessageCount] = useState(0);
   const [lastMessage, setLastMessage] = useState<string>('');
 
-// Receive syslog messages from local websocket:
-useEffect(() => {
+ useEffect(() => {
   if (isListening) {
-    const ws = new WebSocket('ws://127.0.0.1:8080');
+    const ws = new WebSocket('ws://localhost:8080');
     
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
@@ -31,7 +30,6 @@ useEffect(() => {
     return () => ws.close();
   }
 }, [isListening, onLogReceived]);
-
 
   const handleToggle = () => {
     if (!isListening) {
@@ -53,15 +51,6 @@ useEffect(() => {
             {isListening ? 'LISTENING' : 'STOPPED'}
           </Badge>
         </div>
-
-        <Alert>
-          <AlertDescription className="text-xs">
-            <strong>Note:</strong> Browser-based apps cannot directly open UDP sockets. This feature requires a backend service.
-            In production, deploy a Node.js syslog server that forwards logs to this UI via WebSocket.
-            <br/>
-            <strong>Demo Mode:</strong> Simulated log messages are being generated for demonstration.
-          </AlertDescription>
-        </Alert>
 
         <div className="space-y-4">
           <div className="space-y-2">
@@ -92,7 +81,7 @@ useEffect(() => {
             ) : (
               <>
                 <Power className="w-4 h-4 mr-2" />
-                Start Listening (Demo Mode)
+                Start Listening
               </>
             )}
           </Button>
@@ -111,16 +100,6 @@ useEffect(() => {
               )}
             </div>
           )}
-        </div>
-
-        <div className="pt-4 border-t">
-          <h3 className="text-sm mb-2">Backend Setup Instructions</h3>
-          <div className="text-xs text-muted-foreground space-y-1">
-            <p>1. Install dependencies: <code className="bg-muted px-1 py-0.5 rounded">npm install dgram ws</code></p>
-            <p>2. Create a Node.js server that listens on UDP 514</p>
-            <p>3. Forward received syslog messages to this UI via WebSocket</p>
-            <p>4. Configure your network devices to send syslog to your server's IP</p>
-          </div>
         </div>
       </div>
     </Card>

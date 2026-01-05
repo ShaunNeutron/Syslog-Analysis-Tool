@@ -100,28 +100,38 @@ export default function App() {
     // Parse and match with rules
     const parsedLogs = parseAndMatchLogs(rawLog, rules);
     
+    // Add unique IDs to logs for tracking
+    const logsWithIds = parsedLogs.map(log => ({
+      ...log,
+      id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    }));
+    
     // Add logs to real-time view immediately
-    setRealtimeLogs(prev => [...prev, ...parsedLogs]);
+    setRealtimeLogs(prev => [...prev, ...logsWithIds]);
 
     // Analyze critical/warning logs without AI analysis in background
-    parsedLogs.forEach(async (log, index) => {
+    logsWithIds.forEach(async (log) => {
       const shouldAnalyze = 
         (log.severity === 'critical' || log.severity === 'warning') && 
         !log.aiAnalysis;
 
       if (shouldAnalyze) {
+        console.log('🤖 Sending log to Ollama for analysis:', log.message.substring(0, 80));
         try {
           const analyzedLog = await analyzeLogWithOllama(log, ollamaConfig);
+          console.log('✅ Received AI analysis:', analyzedLog.aiAnalysis);
           
-          // Update the specific log entry with AI analysis
-          setRealtimeLogs(prev => {
-            const logIndex = prev.length - parsedLogs.length + index;
-            const updated = [...prev];
-            updated[logIndex] = analyzedLog;
-            return updated;
-          });
+          // Update the specific log entry with AI analysis by ID
+          setRealtimeLogs(prev => 
+            prev.map(l => 
+              l.id === log.id ? { ...analyzedLog, id: log.id } : l
+            )
+          );
+          
+          toast.info('AI analysis complete', { duration: 2000 });
         } catch (error) {
-          console.error('Failed to analyze log with Ollama:', error);
+          console.error('❌ Failed to analyze log with Ollama:', error);
+          toast.error('Ollama analysis failed. Check connection.', { duration: 3000 });
         }
       }
     });
