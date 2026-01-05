@@ -108,7 +108,7 @@ export function RealTimeLogViewer({
                 <>
                   {logs.map((log, index) => (
                     <div
-                      key={index}
+                      key={log.id || index}
                       className={`p-2 rounded border ${getSeverityColor(log.severity)} flex flex-col gap-2`}
                     >
                       <div className="flex items-start gap-2">

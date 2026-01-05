@@ -106,33 +106,52 @@ export default function App() {
       id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     }));
     
+    console.log('📥 Received logs:', logsWithIds.map(l => ({ id: l.id, severity: l.severity, hasAI: !!l.aiAnalysis })));
+    
     // Add logs to real-time view immediately
-    setRealtimeLogs(prev => [...prev, ...logsWithIds]);
+    setRealtimeLogs(prev => {
+      const newLogs = [...prev, ...logsWithIds];
+      console.log('📊 Total logs in state:', newLogs.length);
+      return newLogs;
+    });
 
     // Analyze critical/warning logs without AI analysis in background
-    logsWithIds.forEach(async (log) => {
+    logsWithIds.forEach((log) => {
       const shouldAnalyze = 
         (log.severity === 'critical' || log.severity === 'warning') && 
         !log.aiAnalysis;
 
       if (shouldAnalyze) {
-        console.log('🤖 Sending log to Ollama for analysis:', log.message.substring(0, 80));
-        try {
-          const analyzedLog = await analyzeLogWithOllama(log, ollamaConfig);
-          console.log('✅ Received AI analysis:', analyzedLog.aiAnalysis);
-          
-          // Update the specific log entry with AI analysis by ID
-          setRealtimeLogs(prev => 
-            prev.map(l => 
-              l.id === log.id ? { ...analyzedLog, id: log.id } : l
-            )
-          );
-          
-          toast.info('AI analysis complete', { duration: 2000 });
-        } catch (error) {
-          console.error('❌ Failed to analyze log with Ollama:', error);
-          toast.error('Ollama analysis failed. Check connection.', { duration: 3000 });
-        }
+        console.log('🤖 Sending log to Ollama for analysis:', { id: log.id, message: log.message.substring(0, 80) });
+        
+        // Immediately analyze
+        analyzeLogWithOllama(log, ollamaConfig)
+          .then(analyzedLog => {
+            console.log('✅ Received AI analysis:', { id: log.id, analysis: analyzedLog.aiAnalysis?.substring(0, 100) });
+            
+            // Update the specific log entry with AI analysis by ID
+            setRealtimeLogs(prev => {
+              const updated = prev.map(l => {
+                if (l.id === log.id) {
+                  console.log('🔄 Updating log with ID:', log.id);
+                  return { ...analyzedLog, id: log.id };
+                }
+                return l;
+              });
+              
+              // Verify the update happened
+              const updatedLog = updated.find(l => l.id === log.id);
+              console.log('✔️ Log after update:', { id: log.id, hasAI: !!updatedLog?.aiAnalysis });
+              
+              return updated;
+            });
+            
+            toast.info('AI analysis complete', { duration: 2000 });
+          })
+          .catch(error => {
+            console.error('❌ Failed to analyze log with Ollama:', error);
+            toast.error('Ollama analysis failed. Check connection.', { duration: 3000 });
+          });
       }
     });
 
@@ -200,24 +219,6 @@ export default function App() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <div className="space-y-6">
-          {/* Setup Instructions */}
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Setup Required</AlertTitle>
-            <AlertDescription>
-              This tool requires Ollama running locally. Install from{' '}
-              <a 
-                href="https://ollama.ai" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="underline text-primary"
-              >
-                ollama.ai
-              </a>
-              {' '}and run: <code className="bg-muted px-2 py-1 rounded text-xs">ollama pull llama3.2</code>
-            </AlertDescription>
-          </Alert>
-
           {/* Analysis Progress */}
           {isAnalyzing && analysisTotal > 0 && (
             <Alert>

@@ -18,7 +18,7 @@ export function SyslogListener({ onLogReceived, isListening, onToggleListener }:
   const [messageCount, setMessageCount] = useState(0);
   const [lastMessage, setLastMessage] = useState<string>('');
 
- useEffect(() => {
+useEffect(() => {
   if (isListening) {
     // Use dynamic hostname to support remote access
     // For development: ws://localhost:8080
@@ -48,7 +48,6 @@ export function SyslogListener({ onLogReceived, isListening, onToggleListener }:
     return () => ws.close();
   }
 }, [isListening, onLogReceived]);
-
   const handleToggle = () => {
     if (!isListening) {
       setMessageCount(0);
