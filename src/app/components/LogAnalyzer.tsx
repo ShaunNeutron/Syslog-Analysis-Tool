@@ -4,6 +4,7 @@ import { Badge } from './ui/badge';
 import { ScrollArea } from './ui/scroll-area';
 
 export interface LogEntry {
+  id?: string;			  
   timestamp: string;
   source: 'opnsense' | 'linux' | 'unifi' | 'unknown';
   severity: 'critical' | 'warning' | 'info' | 'normal';
